@@ -10,9 +10,11 @@ fn info(id: &str, agent: AgentStatus) -> TerminalInfo {
     TerminalInfo {
         agent,
         cwd: None,
+        foreground: None,
         id: terminal(id),
         labels: BTreeMap::new(),
         name: Some(format!("{id} name")),
+        reporter: None,
         state: RunState::Running,
         title: None,
     }
@@ -33,11 +35,17 @@ fn core_tabs_gather_in_their_workspaces_with_their_agents() {
     ];
     let workspaces = [
         CoreWorkspace {
+            branch: None,
+            custom_label: false,
+            worktree: None,
             cwd: "/a",
             id: "a",
             label: "A",
         },
         CoreWorkspace {
+            branch: None,
+            custom_label: false,
+            worktree: None,
             cwd: "/b",
             id: "b",
             label: "B",
@@ -95,11 +103,17 @@ fn core_tabs_gather_in_their_workspaces_with_their_agents() {
 fn focus_falls_back_to_the_first_workspace() {
     let workspaces = [
         CoreWorkspace {
+            branch: None,
+            custom_label: false,
+            worktree: None,
             cwd: "",
             id: "a",
             label: "A",
         },
         CoreWorkspace {
+            branch: None,
+            custom_label: false,
+            worktree: None,
             cwd: "",
             id: "b",
             label: "B",
@@ -116,6 +130,9 @@ fn focus_falls_back_to_the_first_workspace() {
 fn extending_keeps_the_first_focus() {
     let mut first = Session::core(
         [CoreWorkspace {
+            branch: None,
+            custom_label: false,
+            worktree: None,
             cwd: "",
             id: "a",
             label: "A",
@@ -126,6 +143,9 @@ fn extending_keeps_the_first_focus() {
     );
     let second = Session::core(
         [CoreWorkspace {
+            branch: None,
+            custom_label: false,
+            worktree: None,
             cwd: "",
             id: "b",
             label: "B",

@@ -13,6 +13,10 @@ use sheprd_client::protocol::{ClientShellAgent, ClientShellSnapshot};
 /// pane it shows.
 pub(crate) type Row<'a> = (usize, &'a str);
 
+/// A listed workspace row: its host, by endpoint index, and the workspace.
+/// Owned, as a host's sessions are built for the asking.
+pub(crate) type WorkspaceRow = (usize, String);
+
 impl SheprdWindow {
     /// Each host the sidebar lists, with the live state it draws from.
     fn listed_lives(&self) -> impl Iterator<Item = (usize, &LiveState)> {
@@ -37,33 +41,41 @@ impl SheprdWindow {
 
     /// The workspace rows the sidebar shows: a folded group or host hides
     /// its rows here too.
-    pub(crate) fn sidebar_workspaces(&self) -> Vec<Row<'_>> {
+    pub(crate) fn sidebar_workspaces(&self) -> Vec<WorkspaceRow> {
         let multi = self.endpoints.len() > 1;
-        self.listed_hosts()
+        self.listed_lives()
             .filter(|(index, _)| {
                 let endpoint = &self.endpoints[*index];
                 !(multi && (endpoint.collapsed || self.device_tag_folded(&endpoint.id)))
             })
-            .flat_map(|(index, snapshot)| {
+            .flat_map(|(index, live)| {
+                if self.config.layout.mode == crate::config::LayoutMode::Coordinator {
+                    return live.snapshot.as_deref().map_or_else(Vec::new, |snapshot| {
+                        super::coordinator::workspace_order(
+                            snapshot,
+                            &self.endpoints[index].id,
+                            &self.collapsed_projects,
+                        )
+                        .into_iter()
+                        .map(|row| (index, snapshot.workspaces[row].workspace_id.clone()))
+                        .collect()
+                    });
+                }
                 let collapsed = if index == 0 {
                     &self.collapsed_repos
                 } else {
                     &self.endpoints[index].collapsed_repos
                 };
-                let rows = if self.config.layout.mode == crate::config::LayoutMode::Coordinator {
-                    super::coordinator::workspace_order(
-                        snapshot,
-                        &self.endpoints[index].id,
-                        &self.collapsed_projects,
-                    )
-                } else {
-                    visible_workspace_entries(&snapshot.workspaces, collapsed)
-                        .into_iter()
-                        .map(|(row, _, _)| row)
-                        .collect()
-                };
-                rows.into_iter()
-                    .map(move |row| (index, snapshot.workspaces[row].workspace_id.as_str()))
+                let sessions = self.sessions(index);
+                sessions
+                    .each()
+                    .flat_map(|session| {
+                        visible_workspace_entries(&session.workspaces, collapsed)
+                            .into_iter()
+                            .map(|(row, _, _)| (index, session.workspaces[row].id.clone()))
+                            .collect::<Vec<_>>()
+                    })
+                    .collect::<Vec<_>>()
             })
             .collect()
     }
