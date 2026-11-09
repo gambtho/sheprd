@@ -47,13 +47,28 @@ pub(super) fn workspace_order(
         .into_iter()
         .flat_map(|(project, members)| {
             let collapsed = folded.contains(&fold_key(host, project));
+            let coordinator = members
+                .first()
+                .filter(|member| member.lane.is_none())
+                .map(|member| member.index);
             members
                 .into_iter()
-                .filter(move |_| !collapsed)
+                .filter(move |member| {
+                    Some(member.index) == coordinator || (!collapsed && member.lane.is_some())
+                })
                 .map(|member| member.index)
         })
         .chain(listing.unmatched)
         .collect()
+}
+
+fn status_color(theme: &crate::config::Theme, status: AgentStatus) -> u32 {
+    theme.ink(match status {
+        AgentStatus::Blocked => theme.palette[3],
+        AgentStatus::Working => theme.palette[2],
+        AgentStatus::Done => theme.palette[6],
+        _ => theme.muted,
+    })
 }
 
 impl SheprdWindow {
@@ -81,6 +96,13 @@ impl SheprdWindow {
         let mut focused = None;
         for (project, members) in listing.projects {
             let coordinator = members.iter().find(|member| member.lane.is_none());
+            let coordinator_workspace =
+                coordinator.map(|member| &snapshot.workspaces[member.index]);
+            let coordinator_focused =
+                selected && coordinator_workspace.is_some_and(|workspace| workspace.focused);
+            let mark_color = coordinator_workspace.map_or(theme.muted, |workspace| {
+                status_color(theme, workspace.agent_status)
+            });
             let key = fold_key(&endpoint.id, project);
             let folded = self.collapsed_projects.contains(&key);
             let needs = members
@@ -127,6 +149,8 @@ impl SheprdWindow {
                 .mt(px(6.))
                 .px(px(look.content_x()))
                 .py(px(4.))
+                .rounded(px(5.))
+                .when(coordinator_focused, |row| row.bg(rgb(theme.active)))
                 .flex()
                 .flex_col()
                 .gap(px(2.))
@@ -140,8 +164,12 @@ impl SheprdWindow {
                         .child(
                             div()
                                 .flex_none()
-                                .text_color(rgb(theme.accent.unwrap_or(theme.foreground)))
-                                .child(label_text("◆")),
+                                .text_color(rgb(mark_color))
+                                .child(label_text(if coordinator.is_some() {
+                                    "◆"
+                                } else {
+                                    "◇"
+                                })),
                         )
                         .child(
                             div()
@@ -177,11 +205,12 @@ impl SheprdWindow {
                         .child(fl!("coordinator-missing")),
                 );
             }
-            if selected
-                && folded
-                && members
-                    .iter()
-                    .any(|member| snapshot.workspaces[member.index].focused)
+            if coordinator_focused
+                || (selected
+                    && folded
+                    && members
+                        .iter()
+                        .any(|member| snapshot.workspaces[member.index].focused))
             {
                 focused = Some(count);
             }
@@ -191,9 +220,8 @@ impl SheprdWindow {
                 continue;
             }
             for member in members {
-                let label = member
-                    .lane
-                    .map_or_else(|| fl!("coordinator-row"), |lane| format!("W{lane}"));
+                let Some(lane) = member.lane else { continue };
+                let label = format!("W{lane}");
                 let workspace = &snapshot.workspaces[member.index];
                 if selected && workspace.focused {
                     focused = Some(count);
@@ -234,12 +262,7 @@ impl SheprdWindow {
         let font = &self.config.sidebar;
         let status = workspace.agent_status;
         let blocked = status == AgentStatus::Blocked;
-        let color = theme.ink(match status {
-            AgentStatus::Blocked => theme.palette[3],
-            AgentStatus::Working => theme.palette[2],
-            AgentStatus::Done => theme.palette[6],
-            _ => theme.muted,
-        });
+        let color = status_color(theme, status);
         let text = if blocked {
             fl!("coordinator-needs-you")
         } else {

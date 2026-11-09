@@ -1,4 +1,3 @@
-coordinator-row = Coordinator
 coordinator-missing = no coordinator
 coordinator-needs-you = needs you
 coordinator-summary =

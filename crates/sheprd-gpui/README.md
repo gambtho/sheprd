@@ -1187,8 +1187,9 @@ it runs in instead; Spaces then takes the full sidebar height. The collapsed
 rail keeps its own agents section either way.
 
 **View > Layout > Coordinator** groups workspaces by project on each host.
-Workspace labels `demo-coord` and `demo-3` become a project header, its coordinator,
-and lane W3; agent names and pane labels are fallbacks. Numbered lanes sort numerically,
+Workspace labels `demo-coord` and `demo-3` become a project header that represents its
+coordinator, and lane W3; agent names and pane labels are fallbacks. Its diamond shows the
+coordinator's live status, without a separate coordinator row. Numbered lanes sort numerically,
 and unmatched workspaces stay below the projects. The arrow folds a project; clicking
 its header focuses its coordinator. Projects without one say **no coordinator**.
 This layout replaces separate agent rows and needs no coordinator suffix setting.
