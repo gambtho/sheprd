@@ -116,6 +116,7 @@ impl SheprdWindow {
                 .border_color(rgb(theme.active))
                 .cursor_pointer()
                 .hover(|style| style.bg(rgb(theme.active)))
+                .map(|control| self.chrome_stop(super::chrome_focus::Region::TitleBar, control))
                 .on_click(cx.listener(move |this, _, window, cx| {
                     cx.stop_propagation();
                     window.focus(&this.focus, cx);
