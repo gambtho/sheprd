@@ -305,6 +305,7 @@ embedded_icons! {
     "coffee-full.svg",
     "coffee.svg",
     "computer.svg",
+    "coordinator-diamond.svg",
     "copy.svg",
     "cpu.svg",
     "devices.svg",
@@ -493,6 +494,10 @@ mod tests {
         assert!(Icons.load(AgentIcon::Generic.path()).unwrap().is_some());
     }
 }
+
+#[cfg(test)]
+#[path = "icons/tests/coordinator.rs"]
+mod coordinator_tests;
 
 #[cfg(test)]
 #[path = "icons/tests/omo.rs"]

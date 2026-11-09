@@ -1,5 +1,8 @@
 //! One workspace per lane, grouped by project within each host.
+mod context;
 mod groups;
+
+use context::Phase;
 
 use super::{label_text, layout::SidebarLook, line_height, workspaces::workspace_label};
 use crate::{NavigationTarget, SheprdWindow, direction::Logical, i18n::fl};
@@ -90,6 +93,7 @@ impl SheprdWindow {
         };
         let listing = host_listing(snapshot);
         let font = &self.config.sidebar;
+        let mark_size = font.size;
         let theme = &self.theme;
         let amber = theme.ink(theme.palette[3]);
         let mut count = 0;
@@ -108,7 +112,11 @@ impl SheprdWindow {
             let needs = members
                 .iter()
                 .filter(|member| {
-                    snapshot.workspaces[member.index].agent_status == AgentStatus::Blocked
+                    let workspace = &snapshot.workspaces[member.index];
+                    matches!(
+                        context::phase(workspace.agent_status, &workspace.tokens),
+                        Phase::Live(AgentStatus::Blocked) | Phase::NeedsDecision
+                    )
                 })
                 .count();
             let lanes = members
@@ -161,16 +169,27 @@ impl SheprdWindow {
                         .items_center()
                         .gap(px(8.))
                         .child(fold)
-                        .child(
-                            div()
-                                .flex_none()
-                                .text_color(rgb(mark_color))
-                                .child(label_text(if coordinator.is_some() {
-                                    "◆"
-                                } else {
-                                    "◇"
-                                })),
-                        )
+                        .child(div().flex_none().text_color(rgb(mark_color)).child(
+                            if coordinator_workspace.is_some_and(|workspace| {
+                                workspace.agent_status == AgentStatus::Working
+                            }) {
+                                crate::mark_layer::layered(mark_size, 1., move || {
+                                    super::agents::spin(
+                                        svg()
+                                            .path("icons/coordinator-diamond.svg")
+                                            .size(px(mark_size))
+                                            .text_color(rgb(mark_color)),
+                                        "coordinator-diamond",
+                                        900,
+                                    )
+                                    .into_any_element()
+                                })
+                                .into_any_element()
+                            } else {
+                                label_text(if coordinator.is_some() { "◆" } else { "◇" })
+                                    .into_any_element()
+                            },
+                        ))
                         .child(
                             div()
                                 .flex_1()
@@ -261,13 +280,29 @@ impl SheprdWindow {
         let theme = &self.theme;
         let font = &self.config.sidebar;
         let status = workspace.agent_status;
-        let blocked = status == AgentStatus::Blocked;
-        let color = status_color(theme, status);
-        let text = if blocked {
-            fl!("coordinator-needs-you")
-        } else {
-            super::agents::status_text(status)
+        let phase = context::phase(status, &workspace.tokens);
+        let blocked = matches!(
+            phase,
+            Phase::Live(AgentStatus::Blocked) | Phase::NeedsDecision
+        );
+        let color = status_color(
+            theme,
+            if blocked {
+                AgentStatus::Blocked
+            } else {
+                status
+            },
+        );
+        let text = match phase {
+            Phase::NeedsDecision | Phase::Live(AgentStatus::Blocked) => {
+                fl!("coordinator-needs-you")
+            }
+            Phase::Ready => fl!("coordinator-ready"),
+            Phase::Live(status) => super::agents::status_text(status),
         };
+        let task = context::task(&workspace.tokens)
+            .map(|value| crate::notifications::safe_text(value, 160))
+            .filter(|value| !value.is_empty());
         let host = self.endpoints[endpoint_index].id.clone();
         let id = workspace.workspace_id.clone();
         let target = id.clone();
@@ -275,13 +310,18 @@ impl SheprdWindow {
         let name = crate::notifications::safe_text(label, 160);
         self.sidebar_button(
             div().id(SharedString::from(format!("coordinator-lane-{host}-{id}"))),
-            format!("{name}: {text}"),
+            task.as_ref().map_or_else(
+                || format!("{name}: {text}"),
+                |task| format!("{name}: {text}, {task}"),
+            ),
         )
         .debug_selector(move || format!("coordinator-lane-{endpoint_index}-{id}"))
         .aria_selected(selected)
         .min_w_0()
         .flex_none()
-        .h(px(line_height(font) + 10.))
+        .h(px(
+            line_height(font) * if task.is_some() { 2. } else { 1. } + 10.
+        ))
         .mx(px(8.))
         .rounded(px(5.))
         .ps(px(if nested { 32. } else { look.content_x() }))
@@ -303,9 +343,23 @@ impl SheprdWindow {
             div()
                 .flex_1()
                 .min_w_0()
-                .truncate()
-                .font_weight(FontWeight::MEDIUM)
-                .child(label_text(&name)),
+                .flex()
+                .flex_col()
+                .child(
+                    div()
+                        .truncate()
+                        .font_weight(FontWeight::MEDIUM)
+                        .child(label_text(&name)),
+                )
+                .when_some(task, |column, task| {
+                    column.child(
+                        div()
+                            .truncate()
+                            .text_size(px(font.size * 0.85))
+                            .text_color(rgb(theme.muted))
+                            .child(label_text(&task)),
+                    )
+                }),
         )
         .child(
             div()
