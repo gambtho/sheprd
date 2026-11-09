@@ -7,6 +7,7 @@ mod activity;
 mod agents;
 mod animated;
 mod cell;
+mod coordinator;
 mod device_drag;
 mod host_row;
 mod hover;

@@ -9,10 +9,7 @@ fn status_icons_fit_every_layout(cx: &mut gpui::TestAppContext) {
     use crate::config::{LayoutMode, StatusIcons};
     let (view, cx) = cx.add_window_view(fixture_window);
     cx.simulate_resize(size(px(800.), px(900.)));
-    // Devices draws Herdr's rows under device headers, which this fixture has none of.
-    let modes = LayoutMode::ALL
-        .into_iter()
-        .filter(|mode| *mode != LayoutMode::Devices);
+    let modes = row_layout_modes();
     for (mode, icons, font) in modes.flat_map(|mode| {
         StatusIcons::ALL
             .iter()

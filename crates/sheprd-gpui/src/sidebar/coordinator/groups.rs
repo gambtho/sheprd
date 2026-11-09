@@ -1,0 +1,57 @@
+//! Workspace identities and deterministic project ordering, independent of UI state.
+use std::collections::BTreeMap;
+
+#[derive(Debug, PartialEq, Eq)]
+pub(super) struct Member<'a> {
+    pub(super) index: usize,
+    pub(super) lane: Option<&'a str>,
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
+pub(super) struct Listing<'a> {
+    pub(super) projects: BTreeMap<&'a str, Vec<Member<'a>>>,
+    pub(super) unmatched: Vec<usize>,
+}
+
+pub(super) fn listing<'a, N: IntoIterator<Item = &'a str>>(
+    rows: impl IntoIterator<Item = (usize, N)>,
+) -> Listing<'a> {
+    let mut result = Listing::default();
+    for (index, names) in rows {
+        let identity = names.into_iter().find_map(|name| {
+            let (project, suffix) = name.trim().rsplit_once('-')?;
+            if project.is_empty() {
+                return None;
+            }
+            match suffix {
+                "coord" => Some((project, None)),
+                digits if !digits.is_empty() && digits.bytes().all(|b| b.is_ascii_digit()) => {
+                    Some((project, Some(digits)))
+                }
+                _ => None,
+            }
+        });
+        match identity {
+            Some((project, lane)) => result
+                .projects
+                .entry(project)
+                .or_default()
+                .push(Member { index, lane }),
+            None => result.unmatched.push(index),
+        }
+    }
+    for members in result.projects.values_mut() {
+        // Decimal strings avoid overflow, and stable sorting preserves ties.
+        members.sort_by_key(|member| {
+            member.lane.map(|lane| {
+                let digits = lane.trim_start_matches('0');
+                (digits.len(), digits)
+            })
+        });
+    }
+    result
+}
+
+#[cfg(test)]
+#[path = "groups/tests.rs"]
+mod tests;

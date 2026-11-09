@@ -1186,6 +1186,14 @@ placement** in **Settings > Sidebar**, to list each agent under the workspace
 it runs in instead; Spaces then takes the full sidebar height. The collapsed
 rail keeps its own agents section either way.
 
+**View > Layout > Coordinator** groups workspaces by project on each host.
+Workspace labels `demo-coord` and `demo-3` become a project header, its coordinator,
+and lane W3; agent names and pane labels are fallbacks. Numbered lanes sort numerically,
+and unmatched workspaces stay below the projects. The arrow folds a project; clicking
+its header focuses its coordinator. Projects without one say **no coordinator**.
+This layout replaces separate agent rows and needs no coordinator suffix setting.
+Only blocked workspaces use amber **needs you** marks.
+
 A search field at the top of the sidebar finds devices, worktrees, and
 branches by name; while it holds text, results grouped by kind replace the
 spaces list. Up and Down move through them, Enter opens one, and Escape

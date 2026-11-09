@@ -1,8 +1,5 @@
 use super::*;
-use crate::{
-    config::LayoutMode,
-    notification_mutes::{Daemon, Mutes, Scope},
-};
+use crate::notification_mutes::{Daemon, Mutes, Scope};
 use gpui::{MouseButton, VisualTestContext};
 
 fn muted(view: &Entity<SheprdWindow>, cx: &mut VisualTestContext, id: &str) -> bool {
@@ -98,10 +95,7 @@ fn every_sidebar_layout_marks_a_muted_workspace_inside_its_row(cx: &mut gpui::Te
         cx.notify();
     });
     let mut names = 0;
-    for mode in LayoutMode::ALL {
-        if mode == LayoutMode::Devices {
-            continue;
-        }
+    for mode in row_layout_modes() {
         view.update(cx, |view, cx| {
             view.config.layout.mode = mode;
             cx.notify();

@@ -1,8 +1,5 @@
 use super::*;
-use crate::{
-    config::LayoutMode,
-    worktree_notes::{Checkout, Notes},
-};
+use crate::worktree_notes::{Checkout, Notes};
 
 fn checkout(branch: &str) -> Checkout {
     Checkout {
@@ -36,10 +33,7 @@ fn a_childs_trunk_runs_on_past_its_note_to_the_next_sibling(cx: &mut gpui::TestA
     cx.run_until_parked();
     let next = "row-sidebar-child-with-a-long-readable-branch-name";
     let mut drawn = 0;
-    for mode in LayoutMode::ALL
-        .into_iter()
-        .filter(|mode| mode.lists_workspaces())
-    {
+    for mode in row_layout_modes() {
         view.update(cx, |view, cx| {
             view.config.layout.mode = mode;
             view.sidebar_width = Some(320.);

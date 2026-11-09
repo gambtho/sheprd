@@ -166,6 +166,7 @@ impl SheprdWindow {
             cloud_setup: None,
             code_indexes: Default::default(),
             code_views: Default::default(),
+            collapsed_projects: Default::default(),
             collapsed_repos: Default::default(),
             config,
             config_load: None,

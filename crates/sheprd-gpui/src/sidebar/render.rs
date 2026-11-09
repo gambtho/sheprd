@@ -102,8 +102,9 @@ impl SheprdWindow {
             .config
             .show_agents
             .then_some(self.config.agents_placement);
-        let agents_panel = placement == Some(AgentsPlacement::Panel) && !devices;
-        let nested_agents = placement == Some(AgentsPlacement::Nested) && !devices;
+        let coordinator = self.config.layout.mode == crate::config::LayoutMode::Coordinator;
+        let agents_panel = placement == Some(AgentsPlacement::Panel) && !devices && !coordinator;
+        let nested_agents = placement == Some(AgentsPlacement::Nested) && !devices && !coordinator;
         let query = if tree_search {
             self.device_tree_query(cx)
         } else {
@@ -192,6 +193,16 @@ impl SheprdWindow {
             if devices {
                 let (list, rows, focused) =
                     self.append_device_agents(spaces, endpoint_index, indicators, look, width, cx);
+                spaces = list;
+                if let Some(row) = focused {
+                    highlighted[0] = Some(space_rows + row);
+                }
+                space_rows += rows;
+                continue;
+            }
+            if coordinator {
+                let (list, rows, focused) =
+                    self.append_coordinator_workspaces(spaces, endpoint_index, look, cx);
                 spaces = list;
                 if let Some(row) = focused {
                     highlighted[0] = Some(space_rows + row);

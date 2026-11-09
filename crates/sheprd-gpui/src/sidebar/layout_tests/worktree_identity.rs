@@ -85,9 +85,7 @@ fn draw_with<'a>(
 }
 
 fn layouts() -> impl Iterator<Item = LayoutMode> {
-    LayoutMode::ALL
-        .into_iter()
-        .filter(|mode| mode.lists_workspaces())
+    row_layout_modes()
 }
 
 /// Every layout hangs the nested worktrees from guide lines, and only them:

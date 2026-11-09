@@ -48,11 +48,7 @@ fn measure(
 #[gpui::test]
 fn marks_grow_with_the_sidebar_font(cx: &mut gpui::TestAppContext) {
     let default = crate::config::Config::default().sidebar.size;
-    // Devices draws Herdr's rows under device headers, which this fixture has none of.
-    for mode in LayoutMode::ALL
-        .into_iter()
-        .filter(|mode| *mode != LayoutMode::Devices)
-    {
+    for mode in row_layout_modes() {
         // A fresh window per layout: GPUI keeps debug bounds from earlier
         // frames, so another layout's probes would linger.
         let (view, cx) = cx.add_window_view(|window, cx| {

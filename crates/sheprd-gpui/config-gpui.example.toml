@@ -176,7 +176,9 @@ keep_selection_after_copy = true
 # "comfortable-rounded") for inset rows with rounded, bordered highlights.
 # "superset" (single-line rows), "orca" (cards), and "minimal" (status and name
 # only) draw rows with a design of their own. "devices" lists each device with
-# its agents under it, and a search over them. View > Layout lists them all.
+# its agents under it, and a search over them. "coordinator" groups workspace
+# labels like "demo-coord" and "demo-3" by project, with one row per lane.
+# View > Layout lists them all.
 layout = "normal"
 # How tab strips draw their tabs: "classic" (even cells divided by a rule),
 # "pills" (rounded pills led by the agent's logo, the status after the title),

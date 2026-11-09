@@ -227,7 +227,7 @@ pub(super) fn layout_for(mode: LayoutMode) -> &'static dyn RowLayout {
         LayoutMode::Classic { .. } => &super::layouts::Herdr,
         LayoutMode::Superset => &super::layouts::Superset,
         LayoutMode::Orca => &super::layouts::Orca,
-        LayoutMode::Minimal => &super::layouts::Minimal,
+        LayoutMode::Minimal | LayoutMode::Coordinator => &super::layouts::Minimal,
         // Herdr's own rows, nested under each device's header.
         LayoutMode::Devices => &super::layouts::Herdr,
     }

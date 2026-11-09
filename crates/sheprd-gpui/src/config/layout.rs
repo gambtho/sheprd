@@ -49,6 +49,8 @@ pub enum LayoutMode {
     Minimal,
     /// Each device with its agents under it, and a search over them.
     Devices,
+    /// Project headers with one workspace row per coordinator or numbered lane.
+    Coordinator,
 }
 
 impl Default for LayoutMode {
@@ -70,10 +72,11 @@ impl LayoutMode {
         "orca",
         "minimal",
         "devices",
+        "coordinator",
     ];
 
     /// Every named layout, in the order menus list them.
-    pub const ALL: [Self; 10] = [
+    pub const ALL: [Self; Self::NAMES.len()] = [
         Self::new(Density::Normal, Style::Flat),
         Self::new(Density::Compact, Style::Flat),
         Self::new(Density::Comfortable, Style::Flat),
@@ -84,6 +87,7 @@ impl LayoutMode {
         Self::Orca,
         Self::Minimal,
         Self::Devices,
+        Self::Coordinator,
     ];
 
     pub const fn new(density: Density, style: Style) -> Self {
@@ -95,7 +99,7 @@ impl LayoutMode {
     pub const fn density(self) -> Density {
         match self {
             Self::Classic { density, .. } => density,
-            Self::Superset | Self::Minimal | Self::Devices => Density::Normal,
+            Self::Superset | Self::Minimal | Self::Devices | Self::Coordinator => Density::Normal,
             Self::Orca => Density::Comfortable,
         }
     }
@@ -104,7 +108,7 @@ impl LayoutMode {
     pub const fn style(self) -> Style {
         match self {
             Self::Classic { style, .. } => style,
-            Self::Superset | Self::Minimal | Self::Devices => Style::Flat,
+            Self::Superset | Self::Minimal | Self::Devices | Self::Coordinator => Style::Flat,
             Self::Orca => Style::Rounded,
         }
     }
@@ -137,6 +141,7 @@ impl LayoutMode {
             Self::Orca => "orca",
             Self::Minimal => "minimal",
             Self::Devices => "devices",
+            Self::Coordinator => "coordinator",
         }
     }
 
@@ -160,6 +165,7 @@ impl LayoutMode {
             Self::Orca => "layout-orca",
             Self::Minimal => "layout-minimal",
             Self::Devices => "layout-devices",
+            Self::Coordinator => "layout-coordinator",
         }
     }
 }

@@ -30,10 +30,7 @@ fn remote_endpoint(view: &SheprdWindow) -> crate::endpoint::Endpoint {
 /// a single-host sidebar has no header to nest under and keeps its column.
 #[gpui::test]
 fn workspaces_nest_under_their_host_in_every_layout(cx: &mut gpui::TestAppContext) {
-    for mode in crate::config::LayoutMode::ALL
-        .into_iter()
-        .filter(|mode| mode.lists_workspaces())
-    {
+    for mode in row_layout_modes() {
         let (_single, cx_single) = cx.add_window_view(|window, cx| {
             let view = cx.new(|cx| {
                 let mut view = fixture_window(window, cx);
@@ -91,10 +88,7 @@ fn nested_worktree_rows_fit_a_narrow_sidebar(cx: &mut gpui::TestAppContext) {
     });
     cx.simulate_resize(size(px(800.), px(900.)));
     cx.run_until_parked();
-    for mode in crate::config::LayoutMode::ALL
-        .into_iter()
-        .filter(|mode| mode.lists_workspaces())
-    {
+    for mode in row_layout_modes() {
         view.update(cx, |fixture, cx| {
             fixture.0.update(cx, |view, cx| {
                 view.config.layout.mode = mode;

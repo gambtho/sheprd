@@ -50,9 +50,20 @@ impl SheprdWindow {
                 } else {
                     &self.endpoints[index].collapsed_repos
                 };
-                visible_workspace_entries(&snapshot.workspaces, collapsed)
-                    .into_iter()
-                    .map(move |(row, _, _)| (index, snapshot.workspaces[row].workspace_id.as_str()))
+                let rows = if self.config.layout.mode == crate::config::LayoutMode::Coordinator {
+                    super::coordinator::workspace_order(
+                        snapshot,
+                        &self.endpoints[index].id,
+                        &self.collapsed_projects,
+                    )
+                } else {
+                    visible_workspace_entries(&snapshot.workspaces, collapsed)
+                        .into_iter()
+                        .map(|(row, _, _)| row)
+                        .collect()
+                };
+                rows.into_iter()
+                    .map(move |row| (index, snapshot.workspaces[row].workspace_id.as_str()))
             })
             .collect()
     }

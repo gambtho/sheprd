@@ -486,6 +486,18 @@ pub(crate) fn snapshot(workspace_count: usize) -> ClientShellSnapshot {
     snapshot_with_repo_key(workspace_count, REPO_KEY)
 }
 
+/// Layouts that share workspace/agent row data and its geometry probes.
+/// Devices and Coordinator replace that tree instead of restyling it.
+#[cfg(test)]
+fn row_layout_modes() -> impl Iterator<Item = crate::config::LayoutMode> {
+    crate::config::LayoutMode::ALL.into_iter().filter(|mode| {
+        !matches!(
+            mode,
+            crate::config::LayoutMode::Devices | crate::config::LayoutMode::Coordinator
+        )
+    })
+}
+
 /// SSH fixtures describe the POSIX host, not the platform running the test.
 #[cfg(test)]
 pub(crate) fn ssh_snapshot(workspace_count: usize) -> ClientShellSnapshot {
@@ -781,6 +793,7 @@ pub(crate) fn fixture_window(window: &mut Window, cx: &mut Context<SheprdWindow>
         integrations: Default::default(),
         install_warning_shown: false,
         version_notice_shown: false,
+        collapsed_projects: Default::default(),
         collapsed_repos: Default::default(),
         wheel: WheelAccumulator::default(),
         sidebar_width: None,

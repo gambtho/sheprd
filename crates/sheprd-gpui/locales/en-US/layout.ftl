@@ -10,3 +10,4 @@ layout-superset = Superset
 layout-orca = Orca
 layout-minimal = Minimal
 layout-devices = Devices
+layout-coordinator = Coordinator
