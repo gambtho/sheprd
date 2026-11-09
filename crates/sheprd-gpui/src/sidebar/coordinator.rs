@@ -133,7 +133,7 @@ impl SheprdWindow {
                 .child(
                     div()
                         .min_w_0()
-                        .flex()
+                        .row()
                         .items_center()
                         .gap(px(8.))
                         .child(fold)
@@ -263,7 +263,7 @@ impl SheprdWindow {
         .rounded(px(5.))
         .ps(px(if nested { 32. } else { look.content_x() }))
         .pe(px(10.))
-        .flex()
+        .row()
         .items_center()
         .gap(px(9.))
         .cursor_pointer()
