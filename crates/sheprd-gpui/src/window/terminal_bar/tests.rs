@@ -29,7 +29,7 @@ fn only_coordinator_layout_adds_a_bar_for_a_lane(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn unnamed_workspaces_and_missing_snapshots_have_no_bar(cx: &mut TestAppContext) {
+fn missing_snapshots_have_no_bar(cx: &mut TestAppContext) {
     let (view, cx) = cx.add_window_view(|window, cx| {
         let mut view = crate::sidebar::layout_tests::fixture_window(window, cx);
         view.config.layout.mode = LayoutMode::Coordinator;

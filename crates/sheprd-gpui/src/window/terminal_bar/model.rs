@@ -1,13 +1,7 @@
 //! Snapshot-only selection and display status for the terminal context row.
-use crate::sidebar::coordinator::groups::Listing;
+pub(super) use crate::sidebar::coordinator::context::Phase;
+use crate::sidebar::coordinator::{context, groups::Listing};
 use sheprd_client::protocol::{AgentStatus, ClientShellSnapshot};
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum Phase {
-    Live(AgentStatus),
-    NeedsDecision,
-    Ready,
-}
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) enum Bar<'a> {
@@ -23,23 +17,6 @@ pub(super) enum Bar<'a> {
         lanes: usize,
         needs: usize,
     },
-}
-
-pub(super) fn phase(status: AgentStatus, hint: Option<&str>) -> Phase {
-    match (status, hint) {
-        (AgentStatus::Working | AgentStatus::Blocked, _) => Phase::Live(status),
-        (_, Some("needs-decision")) => Phase::NeedsDecision,
-        (AgentStatus::Idle, Some("ready")) => Phase::Ready,
-        _ => Phase::Live(status),
-    }
-}
-
-fn token<'a>(tokens: &'a [(String, String)], name: &str) -> Option<&'a str> {
-    tokens
-        .iter()
-        .rev()
-        .find(|(key, _)| key == name)
-        .map(|(_, value)| value.as_str())
 }
 
 pub(super) fn select<'a>(
@@ -59,8 +36,8 @@ pub(super) fn select<'a>(
         return Some(match member.lane {
             Some(number) => Bar::Lane {
                 number,
-                task: token(&workspace.tokens, "task").filter(|task| !task.trim().is_empty()),
-                status: phase(workspace.agent_status, token(&workspace.tokens, "phase")),
+                task: context::task(&workspace.tokens).filter(|task| !task.trim().is_empty()),
+                status: context::phase(workspace.agent_status, &workspace.tokens),
                 label: &workspace.label,
                 coordinator: members
                     .iter()
@@ -71,7 +48,7 @@ pub(super) fn select<'a>(
                 let (lanes, needs) = members.iter().fold((0, 0), |(lanes, needs), member| {
                     let workspace = &snapshot.workspaces[member.index];
                     let attention = matches!(
-                        phase(workspace.agent_status, token(&workspace.tokens, "phase")),
+                        context::phase(workspace.agent_status, &workspace.tokens),
                         Phase::Live(AgentStatus::Blocked) | Phase::NeedsDecision
                     );
                     (

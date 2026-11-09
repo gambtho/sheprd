@@ -1,5 +1,5 @@
 //! One workspace per lane, grouped by project within each host.
-mod context;
+pub(crate) mod context;
 pub(crate) mod groups;
 
 use context::Phase;

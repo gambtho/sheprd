@@ -2,13 +2,13 @@
 use sheprd_client::protocol::AgentStatus;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum Phase {
+pub(crate) enum Phase {
     Live(AgentStatus),
     NeedsDecision,
     Ready,
 }
 
-pub(super) fn phase(status: AgentStatus, tokens: &[(String, String)]) -> Phase {
+pub(crate) fn phase(status: AgentStatus, tokens: &[(String, String)]) -> Phase {
     if matches!(status, AgentStatus::Working | AgentStatus::Blocked) {
         return Phase::Live(status);
     }
@@ -19,7 +19,7 @@ pub(super) fn phase(status: AgentStatus, tokens: &[(String, String)]) -> Phase {
     }
 }
 
-pub(super) fn task(tokens: &[(String, String)]) -> Option<&str> {
+pub(crate) fn task(tokens: &[(String, String)]) -> Option<&str> {
     token(tokens, "task").filter(|value| !value.is_empty())
 }
 

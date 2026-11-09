@@ -96,11 +96,23 @@ fn coordinator_counts_project_members_with_refined_attention() {
     );
 }
 
+fn lane_phase(status: AgentStatus, hint: Option<&str>) -> Phase {
+    let mut snapshot = snapshot(&["demo-2"]);
+    snapshot.workspaces[0].agent_status = status;
+    snapshot.workspaces[0].tokens = hint
+        .map(|value| vec![("phase".into(), value.into())])
+        .unwrap_or_default();
+    let Some(Bar::Lane { status, .. }) = bar(&snapshot, 0) else {
+        panic!("no lane")
+    };
+    status
+}
+
 #[test]
 fn live_working_and_blocked_always_override_phase_hints() {
     for status in [AgentStatus::Working, AgentStatus::Blocked] {
         for hint in [None, Some("needs-decision"), Some("ready"), Some("other")] {
-            assert_eq!(phase(status, hint), Phase::Live(status));
+            assert_eq!(lane_phase(status, hint), Phase::Live(status));
         }
     }
 }
@@ -108,9 +120,12 @@ fn live_working_and_blocked_always_override_phase_hints() {
 #[test]
 fn needs_decision_refines_inactive_status_but_ready_only_refines_idle() {
     for status in [AgentStatus::Idle, AgentStatus::Done, AgentStatus::Unknown] {
-        assert_eq!(phase(status, Some("needs-decision")), Phase::NeedsDecision);
         assert_eq!(
-            phase(status, Some("ready")),
+            lane_phase(status, Some("needs-decision")),
+            Phase::NeedsDecision
+        );
+        assert_eq!(
+            lane_phase(status, Some("ready")),
             if status == AgentStatus::Idle {
                 Phase::Ready
             } else {
@@ -118,13 +133,13 @@ fn needs_decision_refines_inactive_status_but_ready_only_refines_idle() {
             }
         );
         for hint in [None, Some("other"), Some("Ready")] {
-            assert_eq!(phase(status, hint), Phase::Live(status));
+            assert_eq!(lane_phase(status, hint), Phase::Live(status));
         }
     }
 }
 
 #[test]
-fn last_token_wins_and_blank_task_is_omitted() {
+fn duplicate_tokens_follow_the_shared_contexts_first_match() {
     let mut snapshot = snapshot(&["demo-2"]);
     snapshot.workspaces[0].tokens = vec![
         ("task".into(), "Old".into()),
@@ -136,10 +151,22 @@ fn last_token_wins_and_blank_task_is_omitted() {
         bar(&snapshot, 0),
         Some(Bar::Lane {
             number: "2",
-            task: None,
-            status: Phase::Ready,
+            task: Some("Old"),
+            status: Phase::NeedsDecision,
             label: "demo-2",
             coordinator: None,
         })
     );
+}
+
+#[test]
+fn blank_tasks_are_omitted() {
+    for task in ["", "  ", "\n\t"] {
+        let mut snapshot = snapshot(&["demo-2"]);
+        snapshot.workspaces[0].tokens = vec![("task".into(), task.into())];
+        let Some(Bar::Lane { task, .. }) = bar(&snapshot, 0) else {
+            panic!("no lane")
+        };
+        assert_eq!(task, None);
+    }
 }

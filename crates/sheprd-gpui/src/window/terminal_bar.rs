@@ -66,7 +66,7 @@ impl SheprdWindow {
                     };
                     let word = match status {
                         Phase::NeedsDecision => fl!("coordinator-needs-you"),
-                        Phase::Ready => fl!("terminal-bar-ready"),
+                        Phase::Ready => fl!("coordinator-ready"),
                         Phase::Live(status) => status_text(status),
                     };
                     (
