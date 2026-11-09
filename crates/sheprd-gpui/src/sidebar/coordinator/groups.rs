@@ -2,18 +2,18 @@
 use std::collections::BTreeMap;
 
 #[derive(Debug, PartialEq, Eq)]
-pub(super) struct Member<'a> {
-    pub(super) index: usize,
-    pub(super) lane: Option<&'a str>,
+pub(crate) struct Member<'a> {
+    pub(crate) index: usize,
+    pub(crate) lane: Option<&'a str>,
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
-pub(super) struct Listing<'a> {
-    pub(super) projects: BTreeMap<&'a str, Vec<Member<'a>>>,
+pub(crate) struct Listing<'a> {
+    pub(crate) projects: BTreeMap<&'a str, Vec<Member<'a>>>,
     pub(super) unmatched: Vec<usize>,
 }
 
-pub(super) fn listing<'a, N: IntoIterator<Item = &'a str>>(
+pub(crate) fn listing<'a, N: IntoIterator<Item = &'a str>>(
     rows: impl IntoIterator<Item = (usize, N)>,
 ) -> Listing<'a> {
     let mut result = Listing::default();

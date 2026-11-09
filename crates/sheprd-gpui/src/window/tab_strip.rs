@@ -797,6 +797,7 @@ impl SheprdWindow {
         let opened = self.group_opened(slot.id).filter(|_| !zen);
         // The body's ground, beside the strip rather than under it, so the
         // strip's own color is no more solid than the rest of the window.
+        let bar = self.render_terminal_bar(slot, window, cx);
         let body = self.with_ground(
             div()
                 .flex()
@@ -804,6 +805,7 @@ impl SheprdWindow {
                 .flex_1()
                 .min_w_0()
                 .min_h_0()
+                .children(bar)
                 .child(body),
             self.fill().ground(),
         );

@@ -1200,6 +1200,12 @@ lane amber **needs you**, counted in the project summary. `phase=ready` labels a
 idle lane **ready**. Live working or blocked status always wins, and other phase
 values are ignored. These hints do not change daemon status or other layouts.
 
+Coordinator layout also adds a context row above terminals: a lane badge, optional workspace
+`task` token, status, and **↩ coord** on hosts with a matching coordinator. The workspace label
+hides in narrow groups. Coordinator terminals show the project and lane/attention counts.
+The `phase` token refines inactive status: `needs-decision` means **needs you**, and `ready`
+means **ready** only while idle; live working or blocked status always wins.
+
 A search field at the top of the sidebar finds devices, worktrees, and
 branches by name; while it holds text, results grouped by kind replace the
 spaces list. Up and Down move through them, Enter opens one, and Escape
