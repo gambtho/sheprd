@@ -1193,7 +1193,12 @@ coordinator's live status, without a separate coordinator row. Numbered lanes so
 and unmatched workspaces stay below the projects. The arrow folds a project; clicking
 its header focuses its coordinator. Projects without one say **no coordinator**.
 This layout replaces separate agent rows and needs no coordinator suffix setting.
-Only blocked workspaces use amber **needs you** marks.
+The coordinator's diamond spins while it is working, and stays still otherwise.
+A workspace's display-only `task` token adds a muted second line to its lane row;
+without it the row stays single-line. A `phase=needs-decision` token marks a settled
+lane amber **needs you**, counted in the project summary. `phase=ready` labels an
+idle lane **ready**. Live working or blocked status always wins, and other phase
+values are ignored. These hints do not change daemon status or other layouts.
 
 A search field at the top of the sidebar finds devices, worktrees, and
 branches by name; while it holds text, results grouped by kind replace the

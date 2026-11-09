@@ -484,7 +484,7 @@ fn working_orbit(size: f32, color: u32) -> impl IntoElement {
 /// id and the app's synced clock, so all working agents turn in step, and
 /// repaints are capped because a sidebar can show many at once. GPUI holds
 /// it still under reduced motion.
-fn spin(mark: Svg, id: &'static str, period_ms: u64) -> impl IntoElement {
+pub(super) fn spin(mark: Svg, id: &'static str, period_ms: u64) -> impl IntoElement {
     mark.with_animation(
         id,
         Animation::new(crate::motion::duration(std::time::Duration::from_millis(
