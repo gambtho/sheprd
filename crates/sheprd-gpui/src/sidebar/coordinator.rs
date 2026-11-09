@@ -4,7 +4,7 @@ pub(crate) mod groups;
 
 use context::Phase;
 
-use super::{label_text, layout::SidebarLook, line_height, workspaces::workspace_label};
+use super::{label_text, layout::SidebarLook, line_height, workspaces::label_of};
 use crate::{NavigationTarget, SheprdWindow, direction::Logical, i18n::fl};
 use gpui::{prelude::*, *};
 use sheprd_client::protocol::{AgentStatus, ClientShellSnapshot};
@@ -259,9 +259,15 @@ impl SheprdWindow {
             if selected && workspace.focused {
                 focused = Some(count);
             }
+            let label = label_of(
+                &workspace.label,
+                workspace.branch.as_deref(),
+                workspace.custom_label,
+                false,
+            );
             list = list.child(self.coordinator_lane(
                 endpoint_index,
-                (workspace, workspace_label(workspace, false), false),
+                (workspace, label, false),
                 look,
                 cx,
             ));
