@@ -1,5 +1,5 @@
 //! One workspace per lane, grouped by project within each host.
-mod groups;
+pub(crate) mod groups;
 
 use super::{label_text, layout::SidebarLook, line_height, workspaces::workspace_label};
 use crate::{NavigationTarget, SheprdWindow, direction::Logical, i18n::fl};
@@ -7,7 +7,7 @@ use gpui::{prelude::*, *};
 use sheprd_client::protocol::{AgentStatus, ClientShellSnapshot};
 use std::collections::HashSet;
 
-fn host_listing(snapshot: &ClientShellSnapshot) -> groups::Listing<'_> {
+pub(crate) fn host_listing(snapshot: &ClientShellSnapshot) -> groups::Listing<'_> {
     groups::listing(
         snapshot
             .workspaces

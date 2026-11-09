@@ -56,6 +56,7 @@ mod tab_float;
 mod tab_ghost;
 mod tab_strip;
 mod tab_tear;
+mod terminal_bar;
 mod toasts;
 mod transfers;
 pub(crate) mod wsl_drop;
