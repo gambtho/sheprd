@@ -20,6 +20,7 @@ pub(crate) struct ConnectionBridge {
     pub drained: Arc<AtomicBool>,
     pub integrations: Arc<Mutex<IntegrationInbox>>,
     pub(crate) links: Arc<Mutex<crate::links::LinkInbox>>,
+    metadata: Option<sheprd_client::metadata::Watcher>,
     /// Answers the window has read whose mailbox copy could not be cleared
     /// then, as the event reader held it. Cleared at the next update, which
     /// holds the mailbox, so they are not copied into every later one. At
@@ -128,12 +129,14 @@ impl ConnectionBridge {
             drained: Arc::new(AtomicBool::new(true)),
             integrations: Arc::default(),
             links: Arc::default(),
+            metadata: None,
             retired: Mutex::default(),
             scrollback: Arc::default(),
         }
     }
 
     fn reset(&mut self, status: ConnectionStatus, active: bool) {
+        self.metadata = None;
         // Retire audio even when the event reducer holds the inbox. Boot-scoped
         // cancellation alone cannot be reached without that lock.
         self.sound_cancel.store(true, Ordering::Release);
@@ -155,6 +158,29 @@ impl ConnectionBridge {
         // The new mailbox holds none of the old answers.
         self.retired = Mutex::default();
         self.scrollback = Arc::default();
+    }
+
+    pub(crate) fn watch_metadata(&mut self, enabled: bool) {
+        if !enabled || self.handle.as_ref().is_none_or(|h| h.is_disconnected()) {
+            self.metadata = None;
+        } else if self.metadata.as_ref().is_none_or(|m| m.retry_ready())
+            && self.reports_connected() == Some(true)
+        {
+            let inbox = self.inbox.clone();
+            self.metadata = Some(sheprd_client::metadata::Watcher::new(
+                self.target.clone(),
+                move |id, at| {
+                    if let Ok(mut state) = inbox.lock()
+                        && (state.workspace_updates.len() < 1024
+                            || state.workspace_updates.contains_key(&id))
+                    {
+                        let stamp = state.workspace_updates.entry(id).or_insert(at);
+                        *stamp = (*stamp).max(at);
+                        state.dirty = true;
+                    }
+                },
+            ));
+        }
     }
 
     pub fn detach(&mut self, active: bool) {

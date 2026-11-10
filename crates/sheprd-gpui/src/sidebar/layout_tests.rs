@@ -31,6 +31,8 @@ mod coder_dialog;
 #[cfg(test)]
 mod configured_rows;
 #[cfg(test)]
+mod coordinator_freshness;
+#[cfg(test)]
 mod device_footer;
 #[cfg(test)]
 mod device_footer_setting;
@@ -152,6 +154,13 @@ mod worktree_rows;
 #[derive(Default)]
 struct TextProbes(std::collections::BTreeMap<String, (Bounds<Pixels>, String, Pixels)>);
 impl Global for TextProbes {}
+
+#[cfg(test)]
+pub(crate) fn painted_labels(cx: &mut App) -> Vec<String> {
+    std::mem::take(&mut cx.default_global::<TextProbes>().0)
+        .into_keys()
+        .collect()
+}
 
 #[derive(Default)]
 pub(crate) struct PaintedProbes(
@@ -622,6 +631,7 @@ pub(crate) fn fixture_window(window: &mut Window, cx: &mut Context<SheprdWindow>
         app_update_notes_scroll: gpui::ScrollHandle::new(),
         removal: None,
         merged_cleanup: Default::default(),
+        metadata_refresh: None,
         mod_panel_width: crate::panel_resize::MOD_PANEL,
         mods: Default::default(),
         #[cfg(feature = "integration-test")]

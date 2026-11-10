@@ -6,7 +6,6 @@
 //!
 //! Every `wsl.exe` call is bounded: a distribution waiting on a first-run prompt
 //! or a pending update makes `wsl.exe` print nothing and never exit.
-#[cfg(any(windows, test))]
 use crate::ssh::{CANDIDATES, quote};
 use crate::{Result, session_socket, ssh::Bridge};
 #[cfg(windows)]
@@ -314,7 +313,6 @@ pub fn wsl_api_bridge(distro: &str, session: &str) -> Result<Bridge> {
 }
 
 /// The first Herdr installed that has an API bridge, run for `session`.
-#[cfg(any(windows, test))]
 pub(crate) fn api_bridge_script(session: &str) -> String {
     format!(
         r#"{CANDIDATES}

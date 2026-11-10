@@ -18,6 +18,7 @@ mod requests;
 mod surfaces;
 mod version_mismatch;
 mod workspace_move;
+mod workspace_updates;
 
 fn snapshot() -> Arc<ClientShellSnapshot> {
     Arc::new(

@@ -279,6 +279,7 @@ pub(crate) struct SheprdWindow {
     pub(crate) menu_bar_visible: bool,
     /// Removing worktrees whose pull request is merged, when enabled.
     pub(crate) merged_cleanup: crate::merged_cleanup::Cleanup,
+    pub(crate) metadata_refresh: Option<std::time::Instant>,
     /// The mod panel's width; see `crate::mods::panel`.
     pub(crate) mod_panel_width: crate::panel_resize::PanelWidth,
     pub(crate) mods: crate::mods::Mods,
@@ -609,6 +610,18 @@ impl SheprdWindow {
         };
         let old_tab = focused_tab(&self.live);
         self.poll_endpoints(cx);
+        let coordinator = self.config.layout.mode == config::LayoutMode::Coordinator;
+        for endpoint in &mut self.endpoints {
+            endpoint.connection.watch_metadata(coordinator);
+        }
+        if coordinator
+            && self
+                .metadata_refresh
+                .is_none_or(|at| at.elapsed().as_secs() >= 60)
+        {
+            self.metadata_refresh = Some(std::time::Instant::now());
+            cx.notify();
+        }
         let own = window.window_handle().window_id();
         self.follow_focus(own, std::time::Instant::now(), cx);
         if self

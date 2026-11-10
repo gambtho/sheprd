@@ -8,6 +8,8 @@ use crate::{
 use core::prelude::v1::test;
 use std::sync::Arc;
 
+mod freshness;
+
 #[gpui::test]
 fn only_coordinator_layout_adds_a_bar_for_a_lane(cx: &mut TestAppContext) {
     let (view, cx) = cx.add_window_view(|window, cx| {

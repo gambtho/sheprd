@@ -2,6 +2,7 @@
 mod model;
 
 use super::SheprdWindow;
+use crate::sidebar::{coordinator::freshness::Age, label_text};
 use crate::{
     NavigationTarget,
     browser::{Shown, Slot},
@@ -81,6 +82,19 @@ impl SheprdWindow {
         let viewport = f32::from(window.viewport_size().width);
         let width = (viewport - self.sidebar_column_width(viewport).unwrap_or(0.))
             * self.group_share(slot.id);
+        let age = label
+            .as_ref()
+            .and_then(|_| {
+                Age::since(
+                    self.live.workspace_updates.get(workspace).copied(),
+                    std::time::Instant::now(),
+                )
+            })
+            .map(|age| match age {
+                Age::JustNow => fl!("coordinator-updated-now"),
+                Age::Minutes(n) => fl!("coordinator-updated-minutes", minutes = n),
+                Age::Hours(n) => fl!("coordinator-updated-hours", hours = n),
+            });
         let font = &self.config.sidebar;
         let badge = div()
             .child(format!("[{badge}]"))
@@ -144,6 +158,13 @@ impl SheprdWindow {
                 .child(badge)
                 .child(title)
                 .child(status)
+                .children(age.map(|text| {
+                    div()
+                        .min_w_0()
+                        .truncate()
+                        .text_color(rgb(theme.muted))
+                        .child(label_text(&text))
+                }))
                 .children(label)
                 .children(coordinator),
         )

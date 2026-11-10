@@ -1205,6 +1205,11 @@ Coordinator layout also adds a context row above terminals: a lane badge, option
 hides in narrow groups. Coordinator terminals show the project and lane/attention counts.
 The `phase` token refines inactive status: `needs-decision` means **needs you**, and `ready`
 means **ready** only while idle; live working or blocked status always wins.
+Lane bars show the age of the last workspace metadata event received by this client.
+A coordinator silent for one hour adds a muted project-info age below its project heading.
+A restart starts with unknown ages until another event arrives; snapshots do not invent them.
+Ages refresh without input. Zero attention counts and hosts with no workspace rows are hidden
+in Coordinator only; folding a nonempty host still keeps its header.
 
 A search field at the top of the sidebar finds devices, worktrees, and
 branches by name; while it holds text, results grouped by kind replace the

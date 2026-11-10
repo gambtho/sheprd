@@ -83,6 +83,7 @@ pub struct LiveState {
     /// When each of `snapshot`'s agents last changed, on a clock shared with
     /// every other connection, so the agents panel can merge hosts by recency.
     pub(crate) agent_recency: AgentRecency,
+    pub(crate) workspace_updates: std::collections::HashMap<String, std::time::Instant>,
     /// `snapshot` as a [`sheprd_session::Session`], built when first read.
     session: crate::session_model::SnapshotSession,
     /// The pane focused before the current one, in any workspace or tab of
@@ -217,6 +218,7 @@ impl Default for LiveState {
             snapshot: None,
             pending_snapshot: None,
             agent_recency: AgentRecency::default(),
+            workspace_updates: Default::default(),
             session: Default::default(),
             previous_pane: None,
             surface: None,
@@ -322,6 +324,7 @@ impl LiveState {
             pending_snapshot: _,
             // Changes only with `snapshot`, which is compared below.
             agent_recency: _,
+            workspace_updates,
             session: _,
             previous_pane,
             surface: _,
@@ -388,6 +391,7 @@ impl LiveState {
             && Arc::ptr_eq(sound_cancel, &self.sound_cancel)
             && Arc::ptr_eq(sound_connection_cancel, &self.sound_connection_cancel)
             && same_arc(snapshot, &self.snapshot)
+            && *workspace_updates == self.workspace_updates
             && *previous_pane == self.previous_pane
             && *status == self.status
             && *error == self.error
@@ -652,6 +656,7 @@ impl LiveState {
                 self.pending_snapshot = None;
                 self.pending_surface_images = None;
                 self.agent_recency = AgentRecency::default();
+                self.workspace_updates.clear();
                 self.surface = None;
                 self.announcement_dismissal = None;
                 self.surface_images = Default::default();
