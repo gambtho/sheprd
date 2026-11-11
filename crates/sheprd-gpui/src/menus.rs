@@ -10,11 +10,11 @@ use crate::{
     CheckForUpdates, PlaySound, Quit, RunCommand, ShowHerdrNotDetected, ShowLogs,
     ShowUpdatePreview,
     actions::{
-        Copy, Cut, Paste, RingBellPreview, SelectAll, SetChatLayout, SetLayout, SetTabLayout,
-        ShowToastPreview, ShowUpdateDownloadPreview, ShowUpdateHomebrewPreview, TogglePseudoLocale,
-        ToggleSlowAnimations,
+        Copy, Cut, Paste, RingBellPreview, SelectAll, SetChatLayout, SetCoordinatorGroupBy,
+        SetLayout, SetTabLayout, ShowToastPreview, ShowUpdateDownloadPreview,
+        ShowUpdateHomebrewPreview, TogglePseudoLocale, ToggleSlowAnimations,
     },
-    config::{ChatLayoutMode, Config, LayoutMode, TabLayoutMode},
+    config::{ChatLayoutMode, Config, CoordinatorGroupBy, LayoutMode, TabLayoutMode},
     controls::Command,
 };
 #[cfg(target_os = "macos")]
@@ -50,7 +50,7 @@ pub(crate) fn install(cx: &mut App) {
 /// View > Layout: Herdr's densities, their rounded versions, the layouts
 /// with a design of their own, then Devices, which lists agents by device;
 /// the one in use checked.
-fn layout_menu(current: LayoutMode) -> MenuItem {
+fn layout_menu(current: LayoutMode, group_by: CoordinatorGroupBy) -> MenuItem {
     let items = LayoutMode::ALL
         .iter()
         .enumerate()
@@ -60,7 +60,20 @@ fn layout_menu(current: LayoutMode) -> MenuItem {
                 MenuItem::action(mode.label(), SetLayout { mode }).checked(mode == current)
             ])
         });
-    MenuItem::submenu(Menu::new(fl!("menus-layout")).items(items))
+    let mut grouping = Menu::new(fl!("menus-group-by")).items(
+        [
+            (CoordinatorGroupBy::Device, fl!("menus-group-device")),
+            (CoordinatorGroupBy::Project, fl!("menus-group-project")),
+        ]
+        .map(|(choice, label)| {
+            MenuItem::action(label, SetCoordinatorGroupBy { group_by: choice })
+                .checked(choice == group_by)
+        }),
+    );
+    grouping.disabled = current != LayoutMode::Coordinator;
+    MenuItem::submenu(
+        Menu::new(fl!("menus-layout")).items(items.chain([MenuItem::submenu(grouping)])),
+    )
 }
 
 /// View > Tab Layout: how tab strips draw their tabs, the one in use checked.
@@ -83,6 +96,7 @@ fn chat_layout_menu(current: ChatLayoutMode) -> MenuItem {
 /// `old`, so a config reload knows to install it again.
 pub(crate) fn changed(old: &Config, new: &Config) -> bool {
     old.layout.mode != new.layout.mode
+        || old.coordinator_group_by != new.coordinator_group_by
         || old.tab_layout != new.tab_layout
         || old.chat.layout != new.chat.layout
         || old.features.qa_menu != new.features.qa_menu
@@ -235,7 +249,7 @@ pub(crate) fn menus(config: &Config) -> Vec<Menu> {
                     },
                 ),
                 MenuItem::separator(),
-                layout_menu(config.layout.mode),
+                layout_menu(config.layout.mode, config.coordinator_group_by),
                 tab_layout_menu(config.tab_layout),
                 chat_layout_menu(config.chat.layout),
                 MenuItem::action(

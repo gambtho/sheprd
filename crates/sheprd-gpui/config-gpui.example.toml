@@ -186,6 +186,9 @@ keep_selection_after_copy = true
 # labels like "demo-coord" and "demo-3" by project, with one row per lane.
 # View > Layout lists them all.
 layout = "normal"
+# Coordinator layout only: keep device sections, or merge each project's lanes
+# across devices. View > Layout > Group by offers the same choice.
+coordinator_group_by = "device"
 # How tab strips draw their tabs: "classic" (even cells divided by a rule),
 # "pills" (rounded pills led by the agent's logo, the status after the title),
 # "outline" (bare titles, the chosen one in an outlined pill with its close

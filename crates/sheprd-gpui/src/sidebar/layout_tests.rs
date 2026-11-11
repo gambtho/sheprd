@@ -33,6 +33,8 @@ mod configured_rows;
 #[cfg(test)]
 mod coordinator_freshness;
 #[cfg(test)]
+pub(crate) mod coordinator_projects;
+#[cfg(test)]
 mod core_agents;
 #[cfg(test)]
 mod device_footer;
@@ -157,6 +159,10 @@ mod worktree_rows;
 struct TextProbes(std::collections::BTreeMap<String, (Bounds<Pixels>, String, Pixels)>);
 impl Global for TextProbes {}
 
+#[derive(Default)]
+struct TextPaintCounts(std::collections::BTreeMap<String, usize>);
+impl Global for TextPaintCounts {}
+
 #[cfg(test)]
 pub(crate) fn painted_labels(cx: &mut App) -> Vec<String> {
     std::mem::take(&mut cx.default_global::<TextProbes>().0)
@@ -264,6 +270,12 @@ impl Element for ProbeText {
     ) {
         self.0
             .paint(id, inspector_id, bounds, state, prepaint, window, cx);
+        if cx.has_global::<TextPaintCounts>() {
+            *cx.global_mut::<TextPaintCounts>()
+                .0
+                .entry(self.0.to_string())
+                .or_default() += 1;
+        }
         let Some(line) = state.line_layout_for_index(0) else {
             if cx.has_global::<PaintedProbes>() {
                 cx.default_global::<PaintedProbes>().record(

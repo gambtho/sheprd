@@ -1,6 +1,6 @@
 //! Layout choices from the View menu, saved in the order they were made.
 
-use crate::config::{ChatLayoutMode, Config, LayoutMode, TabLayoutMode};
+use crate::config::{ChatLayoutMode, Config, CoordinatorGroupBy, LayoutMode, TabLayoutMode};
 use std::sync::{
     Arc, Mutex, PoisonError,
     atomic::{AtomicU64, Ordering},
@@ -106,6 +106,7 @@ impl<T: Copy> LatestSave<T> {
 #[derive(Default)]
 pub(crate) struct LayoutSaves {
     pub(super) chat: LatestSave<ChatLayoutMode>,
+    pub(super) coordinator: LatestSave<CoordinatorGroupBy>,
     pub(super) sidebar: LatestSave<LayoutMode>,
     pub(super) tabs: LatestSave<TabLayoutMode>,
 }
@@ -116,6 +117,7 @@ impl gpui::Global for LayoutSaves {}
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct LayoutStamps {
     chat: Stamp,
+    coordinator: Stamp,
     sidebar: Stamp,
     tabs: Stamp,
 }
@@ -124,6 +126,7 @@ impl LayoutSaves {
     pub(crate) fn stamp(&self) -> LayoutStamps {
         LayoutStamps {
             chat: self.chat.stamp(),
+            coordinator: self.coordinator.stamp(),
             sidebar: self.sidebar.stamp(),
             tabs: self.tabs.stamp(),
         }
@@ -137,6 +140,9 @@ impl LayoutSaves {
     pub(crate) fn keep_newer(&self, stamps: LayoutStamps, loaded: &mut Config) {
         if let Some(mode) = self.chat.newer_than(stamps.chat) {
             loaded.chat.layout = mode;
+        }
+        if let Some(group_by) = self.coordinator.newer_than(stamps.coordinator) {
+            loaded.coordinator_group_by = group_by;
         }
         if let Some(mode) = self.sidebar.newer_than(stamps.sidebar) {
             loaded.layout.mode = mode;

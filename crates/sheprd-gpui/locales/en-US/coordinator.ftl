@@ -1,4 +1,5 @@
 coordinator-missing = no coordinator
+coordinator-other = Other
 coordinator-needs-you = needs you
 coordinator-ready = ready
 coordinator-summary =

@@ -14,6 +14,24 @@ pub struct Layout {
     pub(crate) legacy_sidebar_gap: Option<f32>,
 }
 
+/// How the Coordinator layout groups projects across devices.
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum CoordinatorGroupBy {
+    #[default]
+    Device,
+    Project,
+}
+
+impl CoordinatorGroupBy {
+    pub(crate) const fn name(self) -> &'static str {
+        match self {
+            Self::Device => "device",
+            Self::Project => "project",
+        }
+    }
+}
+
 /// How much the sidebar fits: spacing, indents, and which details show.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Density {

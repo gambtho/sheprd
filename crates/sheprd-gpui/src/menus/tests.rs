@@ -1,6 +1,8 @@
 use super::*;
 use crate::config::Layout;
 
+mod coordinator_group_by;
+
 #[test]
 fn badge_preview_is_available_only_in_the_macos_qa_menu() {
     let qa = qa_menu();

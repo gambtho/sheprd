@@ -34,7 +34,7 @@ impl SheprdWindow {
         let listing = host_listing(snapshot);
         let theme = &self.theme;
         let amber = theme.ink(theme.palette[3]);
-        let (badge, title, status, label, coordinator) =
+        let (badge, title, mut status, label, coordinator) =
             match model::select(snapshot, &listing, workspace)? {
                 Bar::Coordinator {
                     project,
@@ -79,6 +79,34 @@ impl SheprdWindow {
                     )
                 }
             };
+        let coordinator = if self.project_grouping() {
+            let projects = self.coordinator_projects(None);
+            let members = projects.listing.projects.values().find(|members| {
+                members.iter().any(|m| {
+                    let (host, _, row) = projects.rows[m.index];
+                    host == self.selected_endpoint && row.workspace_id == workspace
+                })
+            });
+            members.and_then(|members| {
+                if label.is_none() {
+                    let (lanes, needs) = projects.counts(members);
+                    status = (
+                        fl!("coordinator-summary", lanes = lanes, needs = needs),
+                        if needs > 0 { amber } else { theme.muted },
+                    );
+                    None
+                } else {
+                    projects
+                        .coordinator(members, self.selected_endpoint)
+                        .map(|index| {
+                            let (host, _, row) = projects.rows[index];
+                            (host, row.workspace_id.clone())
+                        })
+                }
+            })
+        } else {
+            coordinator.map(|id| (self.selected_endpoint, id.to_owned()))
+        };
         let viewport = f32::from(window.viewport_size().width);
         let width = (viewport - self.sidebar_column_width(viewport).unwrap_or(0.))
             * self.group_share(slot.id);
@@ -106,7 +134,10 @@ impl SheprdWindow {
             .flex_1()
             .min_w_0()
             .truncate();
-        let status = div().child(status.0).flex_none().text_color(rgb(status.1));
+        let status = div()
+            .child(label_text(&status.0))
+            .flex_none()
+            .text_color(rgb(status.1));
         let label = label.filter(|_| width >= 600.).map(|label| {
             div()
                 .child(label)
@@ -115,9 +146,9 @@ impl SheprdWindow {
                 .truncate()
                 .text_color(rgb(theme.muted))
         });
-        let coordinator = coordinator.map(|coordinator| {
-            let host = self.endpoints[self.selected_endpoint].id.clone();
-            let target = coordinator.to_owned();
+        let coordinator = coordinator.map(|(index, coordinator)| {
+            let host = self.endpoints[index].id.clone();
+            let target = coordinator;
             div()
                 .child(fl!("terminal-bar-return"))
                 .id(SharedString::from(slot.selector("terminal-coordinator")))

@@ -70,6 +70,13 @@ pub(crate) struct SetLayout {
     pub(crate) mode: crate::config::LayoutMode,
 }
 
+/// Picks the Coordinator layout's grouping, from View > Layout > Group by.
+#[derive(Clone, PartialEq, serde::Deserialize, Action)]
+#[action(no_json)]
+pub(crate) struct SetCoordinatorGroupBy {
+    pub(crate) group_by: crate::config::CoordinatorGroupBy,
+}
+
 /// Picks how chat views draw, from View > Agent Layout.
 #[derive(Clone, PartialEq, serde::Deserialize, Action)]
 #[action(no_json)]

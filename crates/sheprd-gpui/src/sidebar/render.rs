@@ -30,6 +30,7 @@ mod edges;
 mod header;
 mod menu_overlay;
 mod nested_agents;
+mod reveal;
 
 pub(super) use header::header;
 pub(crate) use nested_agents::NestedReveal;
@@ -131,12 +132,18 @@ impl SheprdWindow {
         let mut drop_dragged = 0;
         let now = crate::motion::now();
         // A lifted device folds the list to its headers.
-        let device_plan = headed.then(|| self.device_plan(devices, &query)).flatten();
+        let device_plan = (headed && !self.project_grouping())
+            .then(|| self.device_plan(devices, &query))
+            .flatten();
         let mut sliding = device_plan.as_ref().is_some_and(|plan| plan.sliding);
         let worktree_glyph = self.config.worktrees.glyph(theme);
         // A lifted device folds the list to headers alone, and search results
         // are not arranged by group.
-        let grouped = headed && device_plan.is_none() && query.is_empty() && self.device_tags.any();
+        let grouped = headed
+            && !self.project_grouping()
+            && device_plan.is_none()
+            && query.is_empty()
+            && self.device_tags.any();
         let tag_filter = self.device_tag_filter.as_deref();
         let mut section = None;
         // Sections are headings, so what lists under them steps in, with
@@ -150,7 +157,17 @@ impl SheprdWindow {
             },
             ..look
         };
+        if self.project_grouping() {
+            let (list, rows, focused) =
+                self.append_coordinator_workspaces(spaces, None, look, width, cx);
+            spaces = list;
+            space_rows = rows;
+            highlighted[0] = focused;
+        }
         for (endpoint_index, endpoint) in self.displayed_devices() {
+            if self.project_grouping() {
+                break;
+            }
             let live = if endpoint_index == self.selected_endpoint {
                 &self.live
             } else {
@@ -215,8 +232,13 @@ impl SheprdWindow {
                 continue;
             }
             if coordinator {
-                let (list, rows, focused) =
-                    self.append_coordinator_workspaces(spaces, endpoint_index, look, cx);
+                let (list, rows, focused) = self.append_coordinator_workspaces(
+                    spaces,
+                    Some(endpoint_index),
+                    look,
+                    width,
+                    cx,
+                );
                 spaces = list;
                 if let Some(row) = focused {
                     highlighted[0] = Some(space_rows + row);
@@ -696,38 +718,7 @@ impl SheprdWindow {
         let pinned_host = sticky::pinned(&headers)
             .filter(|_| device_plan.is_none() && !unfolding)
             .and_then(|pinned| self.pinned_host_row(pinned, look, width, cx));
-        // Follow the selection, but only once a frame has measured the viewport:
-        // the handle resolves the request against the previous frame's bounds, so
-        // an unmeasured list would scroll to a meaningless offset. Recording what
-        // was revealed keeps later frames from undoing the user's own scrolling.
-        for (list, row) in highlighted.iter().enumerate() {
-            let Some(row) = *row else { continue };
-            if self.sidebar_revealed[list].get() != Some(row)
-                && self.sidebar_scroll[list].bounds().size.height > px(0.)
-            {
-                let scroll = &self.sidebar_scroll[list];
-                let cover = if list == 0 { cover } else { px(0.) };
-                let visible = scroll.bounds_for_item(row).is_some_and(|bounds| {
-                    let offset = scroll.offset().y;
-                    bounds.bottom() + offset > scroll.bounds().top() + cover
-                        && bounds.top() + offset < scroll.bounds().bottom()
-                });
-                // Even a partially visible worktree is already seen. GPUI's
-                // reveal also moves clipped rows, so only request it off-screen.
-                if !visible {
-                    scroll.scroll_to_item(row);
-                    // The scroll lands in prepaint, after this render pinned a
-                    // header for the old offset, and puts a row from above at
-                    // the top edge, under the pinned header. Another frame pins
-                    // for the new offset and moves the row out from under it.
-                    if list == 0 && headed {
-                        window.request_animation_frame();
-                        self.sidebar_pin_reveal.set(Some(row));
-                    }
-                }
-                self.sidebar_revealed[list].set(Some(row));
-            }
-        }
+        self.reveal_sidebar_rows(highlighted, cover, headed, window);
         if agent_count == 0 {
             agents = agents.child(
                 div()
