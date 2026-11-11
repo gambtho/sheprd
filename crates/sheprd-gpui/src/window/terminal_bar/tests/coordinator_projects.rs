@@ -10,10 +10,12 @@ fn coordinator_projects_bar_sums_both_devices(cx: &mut TestAppContext) {
             snapshot.focused_workspace_id = Some("w0".into());
             snapshot.workspaces[0].focused = true;
             snapshot.workspaces[1].focused = false;
+            view.chrome_region = Some(Region::TitleBar);
             view
         }))
     });
     cx.update(|window, cx| {
+        window.activate_window();
         painted_labels(cx);
         full_draw(window, cx).clear(cx);
         let labels = painted_labels(cx);
@@ -23,7 +25,12 @@ fn coordinator_projects_bar_sums_both_devices(cx: &mut TestAppContext) {
             }),
             "{labels:?}"
         );
-        assert!(!labels.iter().any(|label| label.contains("↩")));
+        window.blur(cx);
+        window.focus_next(cx);
+        assert!(
+            window.focused(cx).is_none(),
+            "coordinator bar has no return stop"
+        );
     });
 }
 

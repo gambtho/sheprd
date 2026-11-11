@@ -101,8 +101,7 @@ impl SheprdWindow {
             let coordinator = if host_index.is_some() {
                 members
                     .iter()
-                    .find(|member| member.lane.is_none())
-                    .map(|member| member.index)
+                    .find_map(|member| member.lane.is_none().then_some(member.index))
             } else {
                 projects.coordinator(members, self.selected_endpoint)
             };
@@ -336,11 +335,16 @@ impl SheprdWindow {
         let target = id.clone();
         let selected = endpoint_index == self.selected_endpoint && workspace.focused;
         let name = crate::notifications::safe_text(label, 160);
+        let device = crate::notifications::safe_text(&self.endpoints[endpoint_index].label, 80);
+        let mut spoken_name = name.clone();
+        if self.project_grouping() {
+            spoken_name.push_str(&format!(", {device}"));
+        }
         self.sidebar_button(
             div().id(SharedString::from(format!("coordinator-lane-{host}-{id}"))),
             task.as_ref().map_or_else(
-                || format!("{name}: {text}"),
-                |task| format!("{name}: {text}, {task}"),
+                || format!("{spoken_name}: {text}"),
+                |task| format!("{spoken_name}: {text}, {task}"),
             ),
         )
         .debug_selector(move || format!("coordinator-lane-{endpoint_index}-{id}"))
@@ -389,20 +393,20 @@ impl SheprdWindow {
                     )
                 }),
         )
-        .when(self.project_grouping() && width >= 260., |row| {
-            row.child(
-                div()
-                    .max_w(px(90.))
-                    .min_w_0()
-                    .truncate()
-                    .text_size(px(font.size * 0.85))
-                    .text_color(rgb(theme.muted))
-                    .child(label_text(&crate::notifications::safe_text(
-                        &self.endpoints[endpoint_index].label,
-                        80,
-                    ))),
-            )
-        })
+        .when(
+            self.project_grouping() && width >= super::scaled(font, 300.).max(300.),
+            |row| {
+                row.child(
+                    div()
+                        .max_w(px(90.))
+                        .min_w_0()
+                        .truncate()
+                        .text_size(px(font.size * 0.85))
+                        .text_color(rgb(theme.muted))
+                        .child(label_text(&device)),
+                )
+            },
+        )
         .child(
             div()
                 .flex_none()

@@ -31,6 +31,8 @@ mod coder_dialog;
 #[cfg(test)]
 mod configured_rows;
 #[cfg(test)]
+mod coordinator_device_font;
+#[cfg(test)]
 mod coordinator_freshness;
 #[cfg(test)]
 pub(crate) mod coordinator_projects;
