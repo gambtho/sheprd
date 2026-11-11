@@ -236,6 +236,7 @@ impl SheprdWindow {
             menu,
             menu_bar_visible,
             merged_cleanup: Default::default(),
+            metadata_refresh: None,
             mod_panel_width: crate::panel_resize::MOD_PANEL,
             mods: Default::default(),
             #[cfg(feature = "integration-test")]

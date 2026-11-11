@@ -1,5 +1,6 @@
 //! One workspace per lane, grouped by project within each host.
 pub(crate) mod context;
+pub(crate) mod freshness;
 pub(crate) mod groups;
 
 use context::Phase;
@@ -206,6 +207,20 @@ impl SheprdWindow {
                                 .child(label_text(&summary)),
                         ),
                 );
+            let received = coordinator_workspace
+                .and_then(|w| live.workspace_updates.get(&w.workspace_id))
+                .copied();
+            if let Some(freshness::Age::Hours(hours)) =
+                freshness::Age::since(received, std::time::Instant::now())
+            {
+                heading = heading.child(
+                    div()
+                        .ps(px(40.))
+                        .truncate()
+                        .text_color(rgb(theme.muted))
+                        .child(label_text(&fl!("coordinator-stale", hours = hours))),
+                );
+            }
             if let Some(coordinator) = coordinator {
                 let host = endpoint.id.clone();
                 let workspace = snapshot.workspaces[coordinator.index].workspace_id.clone();

@@ -151,6 +151,19 @@ impl SheprdWindow {
             ..look
         };
         for (endpoint_index, endpoint) in self.displayed_devices() {
+            let live = if endpoint_index == self.selected_endpoint {
+                &self.live
+            } else {
+                &endpoint.live
+            };
+            if coordinator
+                && live
+                    .snapshot
+                    .as_ref()
+                    .is_none_or(|s| s.workspaces.is_empty())
+            {
+                continue;
+            }
             if !self.device_visible(&endpoint.id)
                 || (devices && !self.device_listed(endpoint_index, &query))
             {

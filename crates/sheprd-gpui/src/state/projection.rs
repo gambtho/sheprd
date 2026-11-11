@@ -194,6 +194,13 @@ impl LiveState {
             .as_deref()
             .filter(|old| old.boot_id == snapshot.boot_id);
         self.agent_recency.observe(previous, &snapshot);
+        if previous.is_none() && self.snapshot.is_some() {
+            self.workspace_updates.clear();
+        }
+        self.workspace_updates.retain(|id, _| {
+            previous.is_none_or(|old| !old.workspaces.iter().any(|w| w.workspace_id == *id))
+                || snapshot.workspaces.iter().any(|w| w.workspace_id == *id)
+        });
         self.snapshot = Some(snapshot);
     }
 }
