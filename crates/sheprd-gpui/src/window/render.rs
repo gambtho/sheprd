@@ -845,6 +845,7 @@ impl Render for SheprdWindow {
                 .absolute()
                 .size_full()
             })
+            .on_action(cx.listener(SheprdWindow::set_coordinator_group_by))
             .on_action(
                 cx.listener(|this, action: &crate::actions::SetLayout, _, cx| {
                     this.set_layout(action.mode, cx);

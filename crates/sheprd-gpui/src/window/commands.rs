@@ -22,6 +22,21 @@ use gpui::{Context, Window};
 use std::time::Duration;
 
 impl SheprdWindow {
+    pub(crate) fn set_coordinator_group_by(
+        &mut self,
+        action: &crate::actions::SetCoordinatorGroupBy,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.config.layout.mode != LayoutMode::Coordinator {
+            return;
+        }
+        let saves = cx.default_global::<LayoutSaves>().coordinator.clone();
+        saves.want(action.group_by);
+        let save = |group_by| Config::save_preference(Preference::CoordinatorGroupBy(group_by));
+        self.write_preference(move || saves.write_latest(save), cx);
+    }
+
     /// Switches the sidebar layout here at once, then keeps it: the choice is
     /// saved to the local overrides off the UI thread, and the config watcher
     /// brings every other window along.

@@ -216,6 +216,10 @@ not take it either.
 | `logs [--lines N] [--path]` | The app's log (no app needed) |
 | `diagnostics bundle PATH` | A redacted report for a bug, with the newest crash reports (no app needed) |
 
+The Coordinator layout's **View > Layout > Group by** choice is also
+`sheprd config set coordinator_group_by project` to combine projects across
+devices, or `device` (the default) to keep device sections. Other layouts ignore it.
+
 Boat's sandbox lifetime uses the existing config commands:
 
 ```sh

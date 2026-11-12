@@ -94,7 +94,7 @@ pub use fonts::{FONT_SIZE_RANGE, FONT_SIZE_STEP, FontConfig};
 pub(crate) use github::MAX_ACCOUNTS;
 pub use github::{GitHubAccount, GitHubConfig};
 pub(crate) use herdr_2::HERDR_2_SCROLLBACK;
-pub use layout::{Density, Layout, LayoutMode, Style};
+pub use layout::{CoordinatorGroupBy, Density, Layout, LayoutMode, Style};
 pub(crate) use notifications::NotificationDelivery;
 pub use notifications::{
     BellConfig, ClipboardToast, ClipboardToastPosition, NotificationConfig, QuietHours, SoundConfig,
@@ -207,6 +207,8 @@ pub struct Config {
     pub container: ContainerConfig,
     /// How far the app's own marks and labels stand off its chrome.
     pub contrast: Contrast,
+    /// Whether the Coordinator layout merges a project's lanes across devices.
+    pub coordinator_group_by: CoordinatorGroupBy,
     pub daytona: DaytonaConfig,
     /// Per saved device, by catalog profile ID.
     pub(crate) devices: BTreeMap<String, DeviceSettings>,
@@ -440,6 +442,7 @@ impl Default for Config {
             confirm_close_workspace: true,
             container: ContainerConfig::default(),
             contrast: Contrast::default(),
+            coordinator_group_by: CoordinatorGroupBy::default(),
             daytona: DaytonaConfig::default(),
             devices: BTreeMap::new(),
             edge_rail: false,
@@ -535,6 +538,7 @@ struct Settings {
     confirm_close_workspace: Option<bool>,
     container: ContainerConfig,
     contrast: Contrast,
+    coordinator_group_by: CoordinatorGroupBy,
     daytona: DaytonaConfig,
     devices: BTreeMap<String, DeviceSettings>,
     edge_rail: Option<bool>,
@@ -915,6 +919,7 @@ impl Config {
         config.status_bar = settings.status_bar;
         config.tab_labels = settings.tab_labels;
         config.tab_layout = settings.tab_layout;
+        config.coordinator_group_by = settings.coordinator_group_by;
         settings.ssh.check()?;
         config.ssh = settings.ssh;
         let (status_icons, legacy_rail) = status_icons::SavedIcons::resolve(settings.status_icons);

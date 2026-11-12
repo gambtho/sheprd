@@ -31,6 +31,9 @@ menus-select-all = Select All
 
 menus-view = View
 menus-layout = Layout
+menus-group-by = Group by
+menus-group-device = Device
+menus-group-project = Project
 menus-tab-layout = Tab Layout
 menus-chat-layout = Agent Layout
 menus-increase-font-size = Increase Font Size

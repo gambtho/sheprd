@@ -8,6 +8,7 @@ use crate::{
 use core::prelude::v1::test;
 use std::sync::Arc;
 
+mod coordinator_projects;
 mod freshness;
 
 #[gpui::test]

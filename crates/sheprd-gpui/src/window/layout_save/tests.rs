@@ -3,6 +3,8 @@
 use super::*;
 use std::sync::mpsc;
 
+mod coordinator_group_by;
+
 #[test]
 fn a_run_of_choices_writes_only_the_newest() {
     let saves = LatestSave::default();

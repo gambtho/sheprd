@@ -40,16 +40,22 @@ pub(crate) fn listing<'a, N: IntoIterator<Item = &'a str>>(
             None => result.unmatched.push(index),
         }
     }
-    for members in result.projects.values_mut() {
-        // Decimal strings avoid overflow, and stable sorting preserves ties.
-        members.sort_by_key(|member| {
-            member.lane.map(|lane| {
-                let digits = lane.trim_start_matches('0');
-                (digits.len(), digits)
-            })
-        });
-    }
+    result.sort();
     result
+}
+
+impl Listing<'_> {
+    pub(super) fn sort(&mut self) {
+        for members in self.projects.values_mut() {
+            // Decimal strings avoid overflow, and stable sorting preserves device-order ties.
+            members.sort_by_key(|member| {
+                member.lane.map(|lane| {
+                    let digits = lane.trim_start_matches('0');
+                    (digits.len(), digits)
+                })
+            });
+        }
+    }
 }
 
 #[cfg(test)]

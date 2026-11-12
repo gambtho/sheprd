@@ -2,6 +2,7 @@
 pub(crate) mod context;
 pub(crate) mod freshness;
 pub(crate) mod groups;
+mod projects;
 
 use context::Phase;
 
@@ -79,51 +80,43 @@ impl SheprdWindow {
     pub(super) fn append_coordinator_workspaces(
         &self,
         mut list: Stateful<Div>,
-        endpoint_index: usize,
+        host_index: Option<usize>,
         look: SidebarLook,
+        width: f32,
         cx: &mut Context<Self>,
     ) -> (Stateful<Div>, usize, Option<usize>) {
-        let endpoint = &self.endpoints[endpoint_index];
-        if endpoint.collapsed && self.endpoints.len() > 1 {
+        if host_index
+            .is_some_and(|index| self.endpoints[index].collapsed && self.endpoints.len() > 1)
+        {
             return (list, 0, None);
         }
-        let selected = endpoint_index == self.selected_endpoint;
-        let live = if selected { &self.live } else { &endpoint.live };
-        let Some(snapshot) = live.snapshot.as_deref() else {
-            return (list, 0, None);
-        };
-        let listing = host_listing(snapshot);
+        let projects = self.coordinator_projects(host_index);
         let font = &self.config.sidebar;
         let mark_size = font.size;
         let theme = &self.theme;
         let amber = theme.ink(theme.palette[3]);
         let mut count = 0;
         let mut focused = None;
-        for (project, members) in listing.projects {
-            let coordinator = members.iter().find(|member| member.lane.is_none());
-            let coordinator_workspace =
-                coordinator.map(|member| &snapshot.workspaces[member.index]);
-            let coordinator_focused =
-                selected && coordinator_workspace.is_some_and(|workspace| workspace.focused);
+        for (&project, members) in &projects.listing.projects {
+            let coordinator = if host_index.is_some() {
+                members
+                    .iter()
+                    .find_map(|member| member.lane.is_none().then_some(member.index))
+            } else {
+                projects.coordinator(members, self.selected_endpoint)
+            };
+            let coordinator_workspace = coordinator.map(|index| projects.rows[index].2);
+            let coordinator_focused = coordinator.is_some_and(|index| {
+                let (host, _, workspace) = projects.rows[index];
+                host == self.selected_endpoint && workspace.focused
+            });
             let mark_color = coordinator_workspace.map_or(theme.muted, |workspace| {
                 status_color(theme, workspace.agent_status)
             });
-            let key = fold_key(&endpoint.id, project);
+            let group_host = host_index.map_or("", |index| self.endpoints[index].id.as_str());
+            let key = fold_key(group_host, project);
             let folded = self.collapsed_projects.contains(&key);
-            let needs = members
-                .iter()
-                .filter(|member| {
-                    let workspace = &snapshot.workspaces[member.index];
-                    matches!(
-                        context::phase(workspace.agent_status, &workspace.tokens),
-                        Phase::Live(AgentStatus::Blocked) | Phase::NeedsDecision
-                    )
-                })
-                .count();
-            let lanes = members
-                .iter()
-                .filter(|member| member.lane.is_some())
-                .count();
+            let (lanes, needs) = projects.counts(members);
             let summary = fl!("coordinator-summary", lanes = lanes, needs = needs);
             let name = crate::notifications::safe_text(project, 160);
             let fold = self
@@ -147,12 +140,12 @@ impl SheprdWindow {
                     }
                     cx.notify();
                 }));
+            let group_id = host_index.map_or_else(|| "all".to_owned(), |index| index.to_string());
             let mut heading = div()
                 .id(SharedString::from(format!(
-                    "project-{}-{project}",
-                    endpoint.id
+                    "project-{group_host}-{project}"
                 )))
-                .debug_selector(move || format!("coordinator-project-{endpoint_index}-{project}"))
+                .debug_selector(move || format!("coordinator-project-{group_id}-{project}"))
                 .min_w_0()
                 .flex_none()
                 .mt(px(6.))
@@ -207,9 +200,10 @@ impl SheprdWindow {
                                 .child(label_text(&summary)),
                         ),
                 );
-            let received = coordinator_workspace
-                .and_then(|w| live.workspace_updates.get(&w.workspace_id))
-                .copied();
+            let received = coordinator.and_then(|index| {
+                let (_, live, workspace) = projects.rows[index];
+                live.workspace_updates.get(&workspace.workspace_id).copied()
+            });
             if let Some(freshness::Age::Hours(hours)) =
                 freshness::Age::since(received, std::time::Instant::now())
             {
@@ -222,8 +216,9 @@ impl SheprdWindow {
                 );
             }
             if let Some(coordinator) = coordinator {
-                let host = endpoint.id.clone();
-                let workspace = snapshot.workspaces[coordinator.index].workspace_id.clone();
+                let (index, _, workspace) = projects.rows[coordinator];
+                let host = self.endpoints[index].id.clone();
+                let workspace = workspace.workspace_id.clone();
                 heading = self
                     .sidebar_button(heading, name)
                     .cursor_pointer()
@@ -240,11 +235,11 @@ impl SheprdWindow {
                 );
             }
             if coordinator_focused
-                || (selected
-                    && folded
-                    && members
-                        .iter()
-                        .any(|member| snapshot.workspaces[member.index].focused))
+                || (folded
+                    && members.iter().any(|member| {
+                        let (host, _, workspace) = projects.rows[member.index];
+                        host == self.selected_endpoint && workspace.focused
+                    }))
             {
                 focused = Some(count);
             }
@@ -256,22 +251,31 @@ impl SheprdWindow {
             for member in members {
                 let Some(lane) = member.lane else { continue };
                 let label = format!("W{lane}");
-                let workspace = &snapshot.workspaces[member.index];
-                if selected && workspace.focused {
+                let (endpoint_index, _, workspace) = projects.rows[member.index];
+                if endpoint_index == self.selected_endpoint && workspace.focused {
                     focused = Some(count);
                 }
                 list = list.child(self.coordinator_lane(
                     endpoint_index,
                     (workspace, &label, true),
                     look,
+                    width,
                     cx,
                 ));
                 count += 1;
             }
         }
-        for index in listing.unmatched {
-            let workspace = &snapshot.workspaces[index];
-            if selected && workspace.focused {
+        if host_index.is_none() && !projects.listing.unmatched.is_empty() {
+            list = list.child(
+                div()
+                    .px(px(look.content_x()))
+                    .child(label_text(&fl!("coordinator-other"))),
+            );
+            count += 1;
+        }
+        for &index in &projects.listing.unmatched {
+            let (endpoint_index, _, workspace) = projects.rows[index];
+            if endpoint_index == self.selected_endpoint && workspace.focused {
                 focused = Some(count);
             }
             let label = label_of(
@@ -284,6 +288,7 @@ impl SheprdWindow {
                 endpoint_index,
                 (workspace, label, false),
                 look,
+                width,
                 cx,
             ));
             count += 1;
@@ -296,6 +301,7 @@ impl SheprdWindow {
         endpoint_index: usize,
         (workspace, label, nested): (&sheprd_client::protocol::ClientShellWorkspace, &str, bool),
         look: SidebarLook,
+        width: f32,
         cx: &mut Context<Self>,
     ) -> Stateful<Div> {
         let theme = &self.theme;
@@ -329,11 +335,16 @@ impl SheprdWindow {
         let target = id.clone();
         let selected = endpoint_index == self.selected_endpoint && workspace.focused;
         let name = crate::notifications::safe_text(label, 160);
+        let device = crate::notifications::safe_text(&self.endpoints[endpoint_index].label, 80);
+        let mut spoken_name = name.clone();
+        if self.project_grouping() {
+            spoken_name.push_str(&format!(", {device}"));
+        }
         self.sidebar_button(
             div().id(SharedString::from(format!("coordinator-lane-{host}-{id}"))),
             task.as_ref().map_or_else(
-                || format!("{name}: {text}"),
-                |task| format!("{name}: {text}, {task}"),
+                || format!("{spoken_name}: {text}"),
+                |task| format!("{spoken_name}: {text}, {task}"),
             ),
         )
         .debug_selector(move || format!("coordinator-lane-{endpoint_index}-{id}"))
@@ -381,6 +392,20 @@ impl SheprdWindow {
                             .child(label_text(&task)),
                     )
                 }),
+        )
+        .when(
+            self.project_grouping() && width >= super::scaled(font, 300.).max(300.),
+            |row| {
+                row.child(
+                    div()
+                        .max_w(px(90.))
+                        .min_w_0()
+                        .truncate()
+                        .text_size(px(font.size * 0.85))
+                        .text_color(rgb(theme.muted))
+                        .child(label_text(&device)),
+                )
+            },
         )
         .child(
             div()

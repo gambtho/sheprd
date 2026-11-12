@@ -13,6 +13,7 @@ pub(crate) enum Preference {
     ChatLayout(ChatLayoutMode),
     /// `[chat] max_width`: the reading column, or zero for full width.
     ChatMaxWidth(u16),
+    CoordinatorGroupBy(CoordinatorGroupBy),
     ConfirmCloseTab(bool),
     /// `language`: `system` or the BCP 47 tag the windows show.
     Language(sheprd_i18n::Language),
@@ -199,6 +200,9 @@ impl Config {
                     (Some("tab_labels"), "agent_title", Some(value.into()))
                 }
                 Preference::TabLayout(mode) => (None, "tab_layout", Some(mode.name().into())),
+                Preference::CoordinatorGroupBy(group_by) => {
+                    (None, "coordinator_group_by", Some(group_by.name().into()))
+                }
                 Preference::FocusFollowsMouse(value) => {
                     (None, "focus_follows_mouse", Some(value.into()))
                 }
